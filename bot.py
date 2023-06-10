@@ -56,6 +56,29 @@ async def xol(ctx):
     await ctx.send(response)
     await ctx.message.delete()
 
+
+@bot.command()
+@has_permissions(kick_members=True)
+async def adduser(ctx, user:discord.Member=None, eventwon=None, postition=None):
+    if user == None:
+        await ctx.send('Please specify a member.')
+    elif eventwon == None:
+        await ctx.send('Please specify an event')
+    else:
+        if eventwon == summer:
+            await ctx.send(f'Congratulations {user.mention} on winning the Cosmic Templars Summer Solstice community event!')
+        elif eventwon == dawning:
+            await ctx.send(f'Congratulations {user.mention} on winning the Cosmic Templars Dawning community event!')
+        elif eventwon == festival:
+            await ctx.send(f'Congratulations {user.mention} on winning the Cosmic Templars Dawning community event!')
+        elif eventwon == guardian:
+            await ctx.send(f'Congratulations {user.mention} on winning {postition} place in the Cosmic Templars Guardian Games community event!')
+        else:
+            await ctx.send('Event not found')
+        role = get(ctx.guild.roles, name='Event Winner')
+        await user.add_roles(role)
+    await ctx.message.delete()
+
     
 
 @bot.command(
@@ -66,7 +89,9 @@ async def createeventrole(ctx):
     if get(ctx.guild.roles, name="Event Winner"):
         await ctx.send('Event Winner role has already been created')
     else:
-        await ctx.guild.create_role(name='Event Winner')
+        role = await ctx.guild.create_role(name='Event Winner')
+        await role.edit(colour=discord.Colour(0xFFFF00))
+        await role.edit(mentionable=False)
         await ctx.send('Event Winner role created')
     await ctx.message.delete()
 
@@ -79,7 +104,13 @@ async def addfestivalwinner(ctx, user:discord.Member=None):
     if user == None:
         await ctx.send('Please specify a member.')
     elif get(ctx.guild.roles, name='Event Winner'):
-        nickname = f'{user.name} → 🎃'
+        if user.nick == None:
+            nickname = f'{user.name} → 🎃'
+        else:
+            if '→' in user.nick:
+                nickname = f'{user.nick} 🎃'
+            else:
+                nickname = f'{user.nick} → 🎃'
         await user.edit(nick=nickname)
         role = get(ctx.guild.roles, name='Event Winner')
         await user.add_roles(role)
@@ -96,12 +127,21 @@ async def removefestivalwinner(ctx):
     role = get(ctx.guild.roles, name='Event Winner')
     if role:
         for m in role.members:
+            emojis = ['🌞', '⛄', '🥇', '🥈', '🥉']
             if '🎃' in m.nick:
-                newnick = m.nick.split('→')[0]
-                await m.edit(nick=newnick)
-                role = get(ctx.guild.roles, name='Event Winner')
-                await m.remove_roles(role)
-                await ctx.send('A new Festival of the Lost winner shall be crowned')
+                for x in emojis:
+                    if x in m.nick:
+                        newnick = m.nick.replace(' 🎃', '')
+                        await m.edit(nick=newnick)
+                        await ctx.send('A new Festival of the Lost winner shall be crowned')
+                        break
+                else:
+                    newnick = m.nick.split('→')[0]
+                    await m.edit(nick=newnick)
+                    role = get(ctx.guild.roles, name='Event Winner')
+                    await m.remove_roles(role)
+                    await ctx.send('A new Festival of the Lost winner shall be crowned')
+                    break
     else:
         await ctx.send('Event Winner role has not been created yet.')
     await ctx.message.delete()
@@ -115,7 +155,13 @@ async def adddawningwinner(ctx, user:discord.Member=None):
     if user == None:
         await ctx.send('Please specify a member.')
     elif get(ctx.guild.roles, name='Event Winner'):
-        nickname = f'{user.name} → ⛄'
+        if user.nick == None:
+            nickname = f'{user.name} → ⛄'
+        else:
+            if '→' in user.nick:
+                nickname = f'{user.nick} ⛄'
+            else:
+                nickname = f'{user.nick} → ⛄'
         await user.edit(nick=nickname)
         role = get(ctx.guild.roles, name='Event Winner')
         await user.add_roles(role)
@@ -132,12 +178,21 @@ async def removedawningwinner(ctx):
     role = get(ctx.guild.roles, name='Event Winner')
     if role:
         for m in role.members:
+            emojis = ['🌞', '🎃', '🥇', '🥈', '🥉']
             if '⛄' in m.nick:
-                newnick = m.nick.split('→')[0]
-                await m.edit(nick=newnick)
-                role = get(ctx.guild.roles, name='Event Winner')
-                await m.remove_roles(role)
-                await ctx.send('A new Dawning winner shall be crowned')
+                for x in emojis:
+                    if x in m.nick:
+                        newnick = m.nick.replace(' ⛄', '')
+                        await m.edit(nick=newnick)
+                        await ctx.send('A new Dawning winner shall be crowned')
+                        break
+                else:
+                    newnick = m.nick.split('→')[0]
+                    await m.edit(nick=newnick)
+                    role = get(ctx.guild.roles, name='Event Winner')
+                    await m.remove_roles(role)
+                    await ctx.send('A new Dawning winner shall be crowned')
+                    break
     else:
         await ctx.send('Event Winner role has not been created yet.')
         await ctx.message.delete()
@@ -145,17 +200,40 @@ async def removedawningwinner(ctx):
 
 @bot.command(
     brief='Adds Guardian Games winner', 
-    description='Adds the mentioned member to the Event Winner role and gives them a special emoji: 🏅.')
+    description='Adds the mentioned member to the Event Winner role and gives them a special emoji: 🥇, 🥈, or 🥉.')
 @has_permissions(kick_members=True)
-async def addguardianwinner(ctx, user:discord.Member=None):
+async def addguardianwinner(ctx, user:discord.Member=None, position=None):
     if user == None:
         await ctx.send('Please specify a member.')
     elif get(ctx.guild.roles, name='Event Winner'):
-        nickname = f'{user.name} → 🏅'
+        if position == 'first':
+            if user.nick == None:
+                nickname = f'{user.name} → 🥇'
+            else:
+                if '→' in user.nick:
+                    nickname = f'{user.nick} 🥇'
+                else:
+                    nickname = f'{user.nick} → 🥇'
+        elif position == 'second':
+            if user.nick == None:
+                nickname = f'{user.name} → 🥈'
+            else:
+                if '→' in user.nick:
+                    nickname = f'{user.nick} 🥈'
+                else:
+                    nickname = f'{user.nick} → 🥈'
+        elif position == 'third':
+            if user.nick == None:
+                nickname = f'{user.name} → 🥉'
+            else:
+                if '→' in user.nick:
+                    nickname = f'{user.nick} 🥉'
+                else:
+                    nickname = f'{user.nick} → 🥉'
         await user.edit(nick=nickname)
         role = get(ctx.guild.roles, name='Event Winner')
         await user.add_roles(role)
-        await ctx.send(f'Congratulations {user.mention} on winning the Cosmic Templars Guardian Games community event!')
+        await ctx.send(f'Congratulations {user.mention} on winning {position} place in the Cosmic Templars Guardian Games community event!')
     else:
         await ctx.send('Event Winner role has not been created yet.')
     await ctx.message.delete()
@@ -168,12 +246,21 @@ async def removeguardianwinner(ctx):
     role = get(ctx.guild.roles, name='Event Winner')
     if role:
         for m in role.members:
-            if '🏅' in m.nick:
-                newnick = m.nick.split('→')[0]
-                await m.edit(nick=newnick)
-                role = get(ctx.guild.roles, name='Event Winner')
-                await m.remove_roles(role)
-                await ctx.send('A new Guardian Games winner shall be crowned')
+            emojis = ['⛄', '🎃', '🌞']
+            if '🥇' in m.nick or '🥈' in m.nick or '🥉' in m.nick:
+                for x in emojis:
+                    if x in m.nick:
+                        newnick = m.nick.replace(' 🥇', '').replace(' 🥈', '').replace(' 🥉', '')
+                        await m.edit(nick=newnick)
+                        await ctx.send('A new Guardian Games winner shall be crowned')
+                        break
+                else:
+                    newnick = m.nick.split('→')[0]
+                    role = get(ctx.guild.roles, name='Event Winner')
+                    await m.remove_roles(role)
+                    await m.edit(nick=newnick)
+                    await ctx.send('A new Guardian Games winner shall be crowned')
+                    break
     else:
         await ctx.send('Event Winner role has not been created yet.')
     await ctx.message.delete()
@@ -187,7 +274,13 @@ async def addsummerwinner(ctx, user:discord.Member=None):
     if user == None:
         await ctx.send('Please specify a member.')
     elif get(ctx.guild.roles, name='Event Winner'):
-        nickname = f'{user.name} → 🌞'
+        if user.nick == None:
+            nickname = f'{user.name} → 🌞'
+        else:
+            if '→' in user.nick:
+                nickname = f'{user.nick} 🌞'
+            else:
+                nickname = f'{user.nick} → 🌞'
         await user.edit(nick=nickname)
         role = get(ctx.guild.roles, name='Event Winner')
         await user.add_roles(role)
@@ -204,12 +297,21 @@ async def removesummerwinner(ctx):
     role = get(ctx.guild.roles, name='Event Winner')
     if role:
         for m in role.members:
+            emojis = ['⛄', '🎃', '🥇', '🥈', '🥉']
             if '🌞' in m.nick:
-                newnick = m.nick.split('→')[0]
-                await m.edit(nick=newnick)
-                role = get(ctx.guild.roles, name='Event Winner')
-                await m.remove_roles(role)
-                await ctx.send('A new Summer Solstice winner shall be crowned')
+                for x in emojis:
+                    if x in m.nick:
+                        newnick = m.nick.replace(' 🌞', '')
+                        await m.edit(nick=newnick)
+                        await ctx.send('A new Summer Solstice winner shall be crowned')
+                        break
+                else:
+                    newnick = m.nick.split('→')[0]
+                    await m.edit(nick=newnick)
+                    role = get(ctx.guild.roles, name='Event Winner')
+                    await m.remove_roles(role)
+                    await ctx.send('A new Summer Solstice winner shall be crowned')
+                    break
     else:
         await ctx.send('Event Winner role has not been created yet.')
     await ctx.message.delete()
